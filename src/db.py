@@ -52,7 +52,8 @@ class User(db.Model):
     def simple_serialize(self):
         return {
             "id": self.id,
-            "code": self.code,
+            # "code": self.code,
+            "name" : self.name
         }
     
 class Group(db.Model):
@@ -84,7 +85,7 @@ class Group(db.Model):
             "title": self.title,
             "description": self.description,
             "members": [m.simple_serialize() for m in self.members],
-            "pots": [p.simple_serialize() for p in self.posts]
+            "posts": [p.simple_serialize() for p in self.posts]
 
         }
     
@@ -96,12 +97,12 @@ class Group(db.Model):
     
 class Post(db.Model):
     '''
-    POst model
+    Post model
     ''' 
     __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     content = db.Column(db.String, nullable = False)
-    user_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable = False)
     
     user = db.relationship("User", back_populates = "posts")

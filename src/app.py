@@ -76,7 +76,7 @@ def delete_user(user_id):
     return success_response(user.serialize())
 
 #-------------Group routes---------------------------
-@app.route("/api/grouos/", methods = ["GET"])
+@app.route("/api/groups/", methods = ["GET"])
 def get_groups():
     groups = Group.query.all()
     return success_response({"groups": [g.serialize() for g in groups]})
@@ -91,7 +91,7 @@ def create_group():
     description = body.get("description")
     if not title or not description:
         return failure_response("Missing title or description", 400)
-    new_group = User(title=title, description=description)
+    new_group = Group(title=title, description=description)
     db.session.add(new_group)
     db.session.commit()
     return success_response(new_group.serialize(), 201)
@@ -105,12 +105,13 @@ def join_group(group_id):
     group = Group.query.filter_by(id=group_id).first()
     if group is None:
         return failure_response("Group not found")
-    user = User.query.filter_by(id=user_id).first()
-    if user is None:
-        return failure_response("User not found")
     
     body = json.loads(request.data)
     user_id = body.get("user_id")
+
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User not found")
 
     group.members.append(user)
     db.session.commit()
