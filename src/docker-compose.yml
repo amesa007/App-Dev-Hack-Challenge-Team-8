@@ -3,6 +3,6 @@ version: "3"
 services:
   study_app:
     build: .
-    image: fiifieb/app-dev-hack-challenge-team-8:v1
+    image: fiifieb/app-dev-hack-challenge-team-8:v3
     ports:
-      - "50:8000"
+      - "80:5000"
