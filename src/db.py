@@ -1,4 +1,5 @@
 import sqlite3
+import re
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -10,12 +11,15 @@ association_table = db.Table(
     db.Column("group_id", db.Integer, db.ForeignKey("groups.id")),
 )
 
-#student_association = db.Table(
-   # "student_course_association",
-  #  db.Model.metadata,
-   # db.Column("user_id", db.Integer, db.ForeignKey("users.id")),
-   # db.Column("course_id", db.Integer, db.ForeignKey("courses.id"))
-#)
+post_tag_association = db.Table(
+    "post_tag_association", 
+    db.Model.metadata,
+    db.Column("post_id", db.Integer, db.ForeignKey("posts.id")),
+    db.Column("tag_id", db.Integer, db.ForeignKey("tags.id")),
+)
+
+def get_tags(tag):
+    return re.findall(r"#(\w+)", tag)
 
 
 # your classes here
@@ -40,7 +44,7 @@ class User(db.Model):
 
     def serialize(self):
         """
-        Serialize a course object
+        Serialize an user object
         """
         return {
             "id": self.id,
@@ -52,7 +56,6 @@ class User(db.Model):
     def simple_serialize(self):
         return {
             "id": self.id,
-            # "code": self.code,
             "name" : self.name
         }
     
@@ -107,6 +110,7 @@ class Post(db.Model):
     
     user = db.relationship("User", back_populates = "posts")
     group = db.relationship("Group", back_populates = "posts")
+    tags = db.relationship("Tag", secondary = post_tag_association, back_populates = "posts")
 
     def __init__(self, **kwargs):
         '''
@@ -120,12 +124,13 @@ class Post(db.Model):
         '''
         Serialize a Post object
         '''
-        user = User.query.filter_by(id=self.group_id).first()
+        user = User.query.filter_by(id=self.user_id).first()
         return {
             "id": self.id,
             "content": self.content,
             "user": self.user.simple_serialize(),
-            "group": self.group.simple_serialize()
+            "group": self.group.simple_serialize(),
+            "tags": [t.simple_serialize() for t in self.tags]
         }
     
     def simple_serialize(self):
@@ -135,4 +140,31 @@ class Post(db.Model):
         return {
             "id": self.id,
             "content": self.content,
+        }
+
+class Tag(db.Model):
+    __tablename__="tags"
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement= True)
+    name = db.Column(db.String, unique = True, nullable = False)
+
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
+    group = db.relationship("Group")
+
+    posts = db.relationship("Post", secondary = post_tag_association, back_populates = "tags")
+    
+    def __init__(self, **kwargs):
+        self.name = kwargs.get("name", "")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "posts": [p.simple_serialize() for p in self.posts]
+        }
+    
+    def simple_serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name
         }

@@ -75,7 +75,7 @@ Response
 }
 
 Create a group
-POST /api/group/
+POST /api/groups/
 
 Request
 {
@@ -159,7 +159,7 @@ GET /api/groups/{id}/posts/
 Response
 <HTTP STATUS CODE 200>
 {
-    "post": [
+    "posts": [
         {
             "id": 1,
             "content": "Hello everyone!",
@@ -190,5 +190,42 @@ Response
     "group": {
         "id": <GROUP ID>,
         "title": <STORED TITLE FOR GROUP WITH ID {group_id}>
+    }
+}
+
+Get a post by its tag
+GET /api/tags/{tag_name}/posts
+
+Response
+<HTTP STATUS CODE 200>
+{
+    "posts": [
+        {
+            "id": <ID>,
+            "content": <CONTENT FOR POST WITH {tag_name}>,
+            "user": { <STORED NAME FOR USER WITH ID {user_id}> },
+            "group": { <STORED GROUP WITH TITLE AND ID {group_id}> }
+        }
+    ]
+}
+
+Join a group by clicking the tag
+POST /api/tags/{tag_name}/join/
+
+Request
+{
+    "user_id": <ID>
+}
+
+Response
+<HTTP STATUS CODE 200>
+{ 
+    "announcement": <USER JOINED {group.tile} >,
+    "group": {
+        "id": <ID>,
+        "title": <GROUP_ID>,
+        "description": <DESCRIPTION OF {group_id}>,
+        "member": [ {<ID, STORED NAME FOR {user.id}>}],
+        "posts": []
     }
 }

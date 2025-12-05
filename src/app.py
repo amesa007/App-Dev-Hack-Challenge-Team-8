@@ -1,6 +1,6 @@
 import os
 
-from db import db, User, Group, Post
+from db import db, User, Group, Post, Tag, get_tags
 import json
 from flask import Flask, request
 
@@ -156,6 +156,18 @@ def create_post():
     )
 
     db.session.add(post)
+
+    tag_name =get_tags(content)
+    
+    for name in tag_name:
+        tag = Tag.query.filter_by(name=name).first()
+        if not tag:
+            tag = Tag(name=name)
+            db.session.add(tag)
+        if tag.group_id is None:
+            tag.group_id = group_id
+        post.tags.append(tag)
+
     db.session.commit()
     return success_response(post.serialize(), 201)
 
@@ -165,7 +177,7 @@ def get_posts_group(group_id):
     group = Group.query.filter_by(id=group_id).first()
     if not group:
         return failure_response("Group not found")
-    return success_response({"post": [p.serialize() for p in group.posts]})
+    return success_response({"posts": [p.serialize() for p in group.posts]})
 
 @app.route("/api/posts/<int:post_id>/", methods = ["DELETE"])
 def delete_post(post_id):
@@ -175,6 +187,44 @@ def delete_post(post_id):
     db.session.delete(post)
     db.session.commit()
     return success_response(post.serialize())
+
+#------------- Tag routes -----------------------------------
+@app.route("/api/tags/<string:tag_name>/posts/", methods = ["GET"])
+def get_post_by_tag(tag_name):
+    "Get the post for the tag/class you want"
+    tag = Tag.query.filter_by(name = tag_name).first()
+    if not tag:
+        return failure_response("Tag not found", 404)
+    return success_response({"posts": [p.serialize() for p in tag.posts]})
+
+@app.route("/api/tags/<string:tag_name>/join/", methods = ["POST"])
+def join_group_by_tag(tag_name):
+    body = json.loads(request.data)
+    user_id = body.get("user_id")
+
+    if user_id is None:
+        return failure_response("Missing user id")
+    
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return failure_response("User not found")
+    
+    tag = Tag.query.filter_by(name=tag_name).first()
+    if not tag:
+        return failure_response("Tag not found")
+    
+    group = tag.group
+    if not group:
+        return failure_response("Group not found")
+    
+    if user not in group.members:
+        group.members.append(user)
+        db.session.commit()
+    
+    return success_response({
+        "announcement": f"User joined group {group.title}",
+        "group": group.serialize()
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
