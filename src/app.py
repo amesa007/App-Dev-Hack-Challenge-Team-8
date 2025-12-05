@@ -160,13 +160,14 @@ def create_post():
     return success_response(post.serialize(), 201)
 
 
-@app.route("/api/groups/<int:group_id>/posts/")
+@app.route("/api/groups/<int:group_id>/posts/", methods=["GET"])
 def get_posts_group(group_id):
     group = Group.query.filter_by(id=group_id).first()
     if not group:
         return failure_response("Group not found")
     return success_response({"post": [p.serialize() for p in group.posts]})
 
+@app.route("/api/posts/<int:post_id>/", methods = ["DELETE"])
 def delete_post(post_id):
     post = Post.query.filter_by(id=post_id).first()
     if not post:

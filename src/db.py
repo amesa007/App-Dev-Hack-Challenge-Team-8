@@ -120,7 +120,7 @@ class Post(db.Model):
         '''
         Serialize a Post object
         '''
-        User = User.query.filter_by(id=self.course_id).first()
+        user = User.query.filter_by(id=self.group_id).first()
         return {
             "id": self.id,
             "content": self.content,
