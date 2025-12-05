@@ -15,35 +15,24 @@ protocol PostCellDelegate: AnyObject {
     func postCell(_ cell: PostCollectionViewCell, didTapHashtag hashtag: String)
 }
 
+protocol CreatePostCellDelegate: AnyObject {
+    func createPostCell(_ cell: CreatePostCollectionViewCell, didTapPostWithText text: String)
+}
+
 class FeedVC: UIViewController {
 
     // MARK: - Properties (view)
 
     private var collectionView: UICollectionView!
 
+    
     // MARK: - Properties (data)
     
+    private let currentUserID = 1
+    private let currentGroupID = 1
+    
     //hardcoded
-    private var posts: [Post] = [
-        Post(id: 1,
-             author: "Anonymous",
-             message: "Anyone want to study for the prelim together?",
-             hashtag: "#cs2110",
-             likeCount: 3,
-             isLikedByMe: false),
-        Post(id: 2,
-             author: "Anonymous",
-             message: "Reminder: Pset 5 is due tn!!!",
-             hashtag: "#math2210",
-             likeCount: 5,
-             isLikedByMe: true),
-        Post(id: 3,
-             author: "Anonymous",
-             message: "Does anyone understand the discussion demos",
-             hashtag: "#cs1110",
-             likeCount: 2,
-             isLikedByMe: false)
-    ]
+    private var posts: [Post] = []
 
     // MARK: - viewDidLoad
 
@@ -55,6 +44,7 @@ class FeedVC: UIViewController {
         view.backgroundColor = .systemGroupedBackground
 
         setupCollectionView()
+        loadPosts()
     }
 
     // MARK: - Set Up Collection View
@@ -84,6 +74,51 @@ class FeedVC: UIViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
+    
+    private func loadPosts() {
+        NetworkManager.shared.fetchPosts(forGroupID: currentGroupID) { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+            case .success(let apiPosts):
+                self.posts = apiPosts.map { Post(from: $0) }
+                self.collectionView.reloadData()
+                
+            case .failure(let error):
+                print("Failed to load posts:", error)
+                let alert = UIAlertController(
+                    title: "Error",
+                    message: "Failed to load posts. Please try again.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                self.present(alert, animated: true)
+            }
+        }
+    }
+    
+    private func createPost(with text: String) {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
+            NetworkManager.shared.createPost(
+                userID: currentUserID,
+                groupID: currentGroupID,
+                content: trimmed
+            ) { [weak self] result in
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let apiPost):
+                    let newPost = Post(from: apiPost)
+                    self.posts.insert(newPost, at: 0)
+                    self.collectionView.reloadData()
+
+                case .failure(let error):
+                    print("Failed to create post:", error)
+                }
+            }
+        }
 }
 
 // MARK: - UICollectionViewDataSource
@@ -107,6 +142,7 @@ extension FeedVC: UICollectionViewDataSource {
                 withReuseIdentifier: CreatePostCollectionViewCell.reuse,
                 for: indexPath
             ) as! CreatePostCollectionViewCell
+            cell.delegate = self
             return cell
         } else {
             let cell = collectionView.dequeueReusableCell(
@@ -174,5 +210,11 @@ extension FeedVC: PostCellDelegate {
     func postCell(_ cell: PostCollectionViewCell, didTapHashtag hashtag: String) {
         let vc = HashtagViewController(hashtag: hashtag)
         navigationController?.pushViewController(vc, animated: true)
+    }
+}
+
+extension FeedVC: CreatePostCellDelegate {
+    func createPostCell(_ cell: CreatePostCollectionViewCell, didTapPostWithText text: String) {
+        createPost(with: text)
     }
 }

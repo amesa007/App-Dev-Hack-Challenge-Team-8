@@ -15,3 +15,14 @@ struct Post {
     var likeCount: Int
     var isLikedByMe: Bool
 }
+
+extension Post {
+    init(from apiPost: APIPost) {
+        self.id = apiPost.id
+        self.author = "Anonymous"
+        self.message = apiPost.content
+        self.hashtag = "#\(apiPost.group.title)"
+        self.likeCount = 0
+        self.isLikedByMe = false
+    }
+}

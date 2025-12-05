@@ -19,6 +19,7 @@ class CreatePostCollectionViewCell: UICollectionViewCell {
 
     static let reuse: String = "CreatePostCollectionViewCellReuse"
 
+    weak var delegate: CreatePostCellDelegate?
     // MARK: - init
 
     override init(frame: CGRect) {
@@ -76,7 +77,10 @@ class CreatePostCollectionViewCell: UICollectionViewCell {
     // MARK: - Button Helpers
 //no backend yet
     @objc private func createPost() {
+        let text = textField.text ?? ""
+        delegate?.createPostCell(self, didTapPostWithText: text)
         textField.text = ""
+        textField.resignFirstResponder()
     }
 }
 
