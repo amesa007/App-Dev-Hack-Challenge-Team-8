@@ -21,7 +21,13 @@ extension Post {
         self.id = apiPost.id
         self.author = "Anonymous"
         self.message = apiPost.content
-        self.hashtag = "#\(apiPost.group.title)"
+        
+        if let firstTag = apiPost.tags.first {
+            self.hashtag = "#\(firstTag.name)"
+        } else {
+            self.hashtag = "#\(apiPost.group.title)"
+        }
+
         self.likeCount = 0
         self.isLikedByMe = false
     }
